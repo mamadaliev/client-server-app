@@ -52,14 +52,18 @@ public class MessageConverter {
         while (match.find()) {
             String row = json.substring(match.start(), match.end());
             Matcher name = Pattern.compile("\\w+:").matcher(row);
-            Matcher value = Pattern.compile(": [\"]?[\\w\\d\\s:]*[\"]?").matcher(row);
+            Matcher value = Pattern.compile(": [\"]?.*").matcher(row);
 
             if (name.find() && value.find()) {
                 String n = row.substring(name.start(), name.end() - 1);
                 String v = row.substring(value.start(), value.end());
 
                 if (v.endsWith("\"")) {
-                    v = row.substring(value.start() + 3, value.end() - 1);
+                    if (row.substring(value.start() + 3, value.end()).length() > 0) {
+                        v = row.substring(value.start() + 3, value.end() - 1);
+                    } else {
+                        v = row.substring(value.start() + 3, value.end());
+                    }
                 } else {
                     v = row.substring(value.start() + 2, value.end());
                 }
