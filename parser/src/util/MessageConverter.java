@@ -46,44 +46,50 @@ public class MessageConverter {
     public static Message convertToMessage(String json) {
         String login = "";
         String text = "";
-        long date = 0;
-        Matcher match = Pattern.compile("\\w+:\\s[\"]?[\\w\\d\\s:]*[\"]?").matcher(json);
+        int length = 0;
+        long timestamp = 0;
 
-        while (match.find()) {
-            String row = json.substring(match.start(), match.end());
-            Matcher name = Pattern.compile("\\w+:").matcher(row);
-            Matcher value = Pattern.compile(": [\"]?.*").matcher(row);
-
-            if (name.find() && value.find()) {
-                String n = row.substring(name.start(), name.end() - 1);
-                String v = row.substring(value.start(), value.end());
-
-                if (v.endsWith("\"")) {
-                    if (row.substring(value.start() + 3, value.end()).length() > 0) {
-                        v = row.substring(value.start() + 3, value.end() - 1);
-                    } else {
-                        v = row.substring(value.start() + 3, value.end());
-                    }
-                } else {
-                    v = row.substring(value.start() + 2, value.end());
-                }
-
-                switch (n) {
-                    case "login":
-                        login = v;
-                        break;
-                    case "text":
-                        text = v;
-                        break;
-                    case "timestamp":
-                        date = Long.parseLong(v);
-                        break;
-                    default:
-                        throw new RuntimeException();
-                }
-            }
+        /* login: "\w" */
+        Matcher loginMatcher = Pattern.compile("login: \"[\\w]+\"").matcher(json);
+        if (loginMatcher.find()) {
+            if (json.substring(loginMatcher.start() + 8, loginMatcher.end() - 1).length() > 0)
+                login = json.substring(loginMatcher.start() + 8,
+                        loginMatcher.end() - 1);
         }
-        return new Message(login, text, date);
+
+        /* length: \d */
+        Matcher textLengthMatcher = Pattern.compile("length: \\d+").matcher(json);
+        if (textLengthMatcher.find()) {
+            if (json.substring(textLengthMatcher.start() + 8, textLengthMatcher.end()).length() > 0)
+                length = Integer.parseInt(json.substring(textLengthMatcher.start() + 8,
+                        textLengthMatcher.end()));
+        }
+
+        /* text: (.*){length} */
+        Matcher textMatcher = Pattern.compile("text: \"(.){" + length + "}").matcher(json);
+        if (textMatcher.find()) {
+            if (json.substring(textMatcher.start() + 7, textMatcher.end()).length() > 0)
+                text = json.substring(textMatcher.start() + 7,
+                        textMatcher.end());
+        }
+
+        /* timestamp: \d */
+        String afterText = json.substring(textMatcher.end());
+        Matcher dateMatcher = Pattern.compile("timestamp: [\\d]+").matcher(afterText);
+        if (dateMatcher.find()) {
+            if (afterText.substring(dateMatcher.start() + 11, dateMatcher.end() - 1).length() > 0)
+                timestamp = Long.parseLong(afterText.substring(dateMatcher.start() + 11,
+                        dateMatcher.end()));
+        }
+
+        /*
+        System.out.println("login: " + login);
+        System.out.println("length: " + length);
+        System.out.println("text: " + text);
+        System.out.println("timestamp: " + timestamp);
+        */
+
+        return new Message(login, text, timestamp);
     }
 
     /**
@@ -94,10 +100,15 @@ public class MessageConverter {
      */
     public static ArrayList<Message> convertAllToMessages(String json) {
         ArrayList<Message> messages = new ArrayList<>();
-        Matcher match = Pattern.compile("\\{[\\w\\d:\",\\s]+}").matcher(json);
+        String[] rows = Pattern.compile("},").split(json);
 
-        while (match.find()) {
-            String row = json.substring(match.start(), match.end());
+        for (String row : rows) {
+            row = row.trim();
+            if (row.startsWith("["))
+                row = row.substring(1);
+            if (row.endsWith("]"))
+                row = row.substring(0, row.length() - 1);
+            //System.out.println(row);
             messages.add(convertToMessage(row));
         }
         return messages;
