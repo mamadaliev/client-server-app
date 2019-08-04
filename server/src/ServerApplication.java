@@ -18,9 +18,12 @@ public class ServerApplication {
     private static ArrayList<Message> messages = new ArrayList<>();
 
     /**
-     * Port of the server. Default port is 45778.
+     * Ports of this server.
+     * Default port for sending messages is 45777.
+     * Default port for sending files if 45778.
      */
-    private final static int PORT = 45777;
+    private final static int MESSAGE_PORT = 45777;
+    private final static int UPLOADS_PORT = 45778;
 
     /**
      * Runs the client application.
@@ -28,7 +31,7 @@ public class ServerApplication {
      * @param args Arguments from Command Line Interface.
      */
     public static void main(String[] args) throws IOException {
-        ServerSocket socket = new ServerSocket(PORT);
+        ServerSocket socket = new ServerSocket(MESSAGE_PORT);
 
         while (true) {
             Socket accept = socket.accept();
@@ -51,17 +54,18 @@ public class ServerApplication {
         BufferedReader fromClient = new BufferedReader(new InputStreamReader(is));
         PrintWriter toClient = new PrintWriter(os, true);
 
+        /* get command from clients */
         String command = (String) fromClient.readLine();
         System.out.println(command);
 
         if (command.matches("/.*")) {
-            if (command.matches("/messages:[\\w]+")) {
-                String login = command.split(":")[1];
+            if (command.matches("/messages/[\\w]+")) {
+                String login = command.split("/")[2];
                 toClient.println(MessageSorter.getMessagesByLogin(messages, login).toString());
-                System.out.println(MessageSorter.getMessagesByLogin(messages, login).toString());
+                //System.out.println(MessageSorter.getMessagesByLogin(messages, login).toString());
             }
         } else if (messages.add(MessageConverter.convertToMessage(command))) {
-            toClient.println("Your message has been successfully sent!");
+            toClient.println("sended");
         } else {
             toClient.println("Your message has not been sent, try again.");
         }
