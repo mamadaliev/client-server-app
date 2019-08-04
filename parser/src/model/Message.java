@@ -9,17 +9,20 @@ public class Message implements Serializable {
 
     private String login;
     private String text;
+    private int length;
     private long timestamp;
 
     public Message(String login, String text) {
         this.login = login;
         this.text = text;
+        this.length = text.length();
         this.timestamp = Instant.now().toEpochMilli();
     }
 
     public Message(String login, String text, long timestamp) {
         this.login = login;
         this.text = text;
+        this.length = text.length();
         this.timestamp = timestamp;
     }
 
@@ -39,6 +42,10 @@ public class Message implements Serializable {
         this.text = text;
     }
 
+    public int getLength() {
+        return this.length;
+    }
+
     public long getTimestamp() {
         return timestamp;
     }
@@ -49,8 +56,9 @@ public class Message implements Serializable {
 
     @Override
     public String toString() {
-        return "{login: \"" + login + "\", " +
-                "text: \"" + text + "\", " +
-                "timestamp: " + timestamp + "}";
+        return "{login: \"" + this.login + "\", " +
+                "text: \"" + this.text + "\", " +
+                "length: " + this.length + ", " +
+                "timestamp: " + this.timestamp + "}";
     }
 }
