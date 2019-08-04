@@ -1,12 +1,18 @@
 import model.Message;
 import util.MessageConverter;
 import util.MessageSorter;
+import util.TextFilter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -40,13 +46,14 @@ public class ClientApplication {
     // menu
     private static void menu() {
         System.out.println(
-                "----------[ " + login + " ]----------\n" +
+                "----------[ " + login + " ]:\n" +
                         "1. Enter a new message\n" +
                         "2. Show a list of my messages\n" +
-                        "3. Delete your message (by id)\n" +
+                        "3. Delete my message (by id)\n" +
                         "4. Exit the session");
 
         while (true) {
+            System.out.print("$ ");
             String command = in.nextLine();
             try {
                 int number = Integer.valueOf(command);
@@ -67,7 +74,7 @@ public class ClientApplication {
                         break;
                     case 2:
                         try {
-                            showMessages();
+                            showMyMessages();
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -100,7 +107,7 @@ public class ClientApplication {
                  BufferedReader fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
                 // send to server
-                toServer.println(new Message(login, message));
+                toServer.println(new Message(login, TextFilter.filter(message), Instant.now().toEpochMilli()).toString());
 
                 // response from server
                 String line = fromServer.readLine();
@@ -109,30 +116,39 @@ public class ClientApplication {
         }
     }
 
-    // MessageSorter.getMessagesByLogin(messages, login);
-    private static void showMessages() throws IOException {
+    private static void showMyMessages() throws IOException {
         try (Socket socket = new Socket(HOSTNAME, MESSAGE_PORT)) {
             try (PrintWriter toServer = new PrintWriter(socket.getOutputStream(), true);
                  BufferedReader fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-                // send to server
-                toServer.println("/messages:" + login);
+                /* send to server */
+                toServer.println("/messages/" + login);
 
-                // response from server
+                /* response from server */
                 String line = fromServer.readLine();
 
-//                System.out.println(line);
-
-                // All messages
+                /* all messages */
                 ArrayList<Message> messages = MessageSorter.getMessagesByLogin(
                         MessageConverter.convertAllToMessages(line), login);
 
-//                System.out.println(messages.toString());
+                //System.out.println(messages);
 
-                System.out.println("----------[ 2. My messages ]----------");
-                for (int i = 0; i < messages.size(); i++) {
-                    System.out.println(i + ". " + messages.get(i).getLogin() + ": " + messages.get(i).getText());
+                LocalDate date;
+                int myMessagesCount = 0;
+
+                System.out.printf("----------[ %s/messages ]:\n", login);
+                System.out.printf("%-4s | %-12s | %-10s | %-20s\n", "ID", "Date", "Login", "Message");
+                System.out.println("----------------------------------------------------");
+                for (Message message : messages) {
+                    date = LocalDate.from(new Timestamp(message.getTimestamp()).toLocalDateTime());
+                    System.out.printf("%-4s | %-12s | %-10s | %-20s\n",
+                            ++myMessagesCount,
+                            (date.getDayOfMonth() + "\\" + date.getMonthValue() + "\\" + date.getYear()),
+                            message.getLogin(),
+                           TextFilter.filterOut( message.getText()));
                 }
+                System.out.println("----------------------------------------------------");
+                System.out.println("count: " + myMessagesCount);
             }
         }
     }
