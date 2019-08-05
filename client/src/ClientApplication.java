@@ -8,11 +8,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -122,7 +120,7 @@ public class ClientApplication {
                  BufferedReader fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
                 /* send to server */
-                toServer.println("/messages/" + login);
+                toServer.println(login + "/messages");
 
                 /* response from server */
                 String line = fromServer.readLine();
@@ -145,10 +143,19 @@ public class ClientApplication {
                             ++myMessagesCount,
                             (date.getDayOfMonth() + "\\" + date.getMonthValue() + "\\" + date.getYear()),
                             message.getLogin(),
-                           TextFilter.filterOut( message.getText()));
+                            TextFilter.filterOut( message.getText()));
                 }
                 System.out.println("----------------------------------------------------");
                 System.out.println("count: " + myMessagesCount);
+            }
+        }
+    }
+
+    private static void deleteMyMessageById() throws IOException {
+        try (Socket socket = new Socket(HOSTNAME, MESSAGE_PORT)) {
+            try (PrintWriter toServer = new PrintWriter(socket.getOutputStream(), true);
+                 BufferedReader fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+                // ...
             }
         }
     }
