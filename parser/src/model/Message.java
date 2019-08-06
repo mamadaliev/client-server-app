@@ -7,6 +7,7 @@ public class Message implements Serializable {
 
     private static long serialVersionUID = -7829019828079546536L;
 
+    private long id;
     private String login;
     private String text;
     private int length;
@@ -24,6 +25,14 @@ public class Message implements Serializable {
         this.text = text;
         this.length = text.length();
         this.timestamp = timestamp;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getLogin() {
@@ -56,7 +65,8 @@ public class Message implements Serializable {
 
     @Override
     public String toString() {
-        return "{login: \"" + this.login + "\", " +
+        return "{id: " + this.id + ", " +
+                "login: \"" + this.login + "\", " +
                 "text: \"" + this.text + "\", " +
                 "length: " + this.length + ", " +
                 "timestamp: " + this.timestamp + "}";
